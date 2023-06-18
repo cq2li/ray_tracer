@@ -2,7 +2,7 @@ use std::io::{ self, Write };
 use std::default::Default;
 use std::ops::{ Neg, Index, IndexMut, AddAssign, Add, Sub, Mul, MulAssign, SubAssign, Div };
 
-#[derive(Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Vec3 { e0: f64, e1: f64, e2: f64 }
 
 pub type Point3 = Vec3;
@@ -42,7 +42,7 @@ impl Vec3 {
     }
 
     pub fn dot(v: Vec3, w: Vec3) -> f64 {
-        v.e0 * w.e0 + v.e1 + w.e1 + v.e2 * w.e2
+        v.e0 * w.e0 + v.e1 * w.e1 + v.e2 * w.e2
     }
 
     pub fn cross(v: Vec3, w: Vec3) -> Vec3 {
