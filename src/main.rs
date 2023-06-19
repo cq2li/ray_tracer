@@ -1,57 +1,78 @@
 pub mod vec3;
-use crate::vec3::{ Vec3, Point3 };
-
+use crate::vec3::{Point3, Vec3, Colour };
 pub mod ray;
-use crate::ray::{ Ray, ray_colour, sph_ray_colour };
+use crate::ray::{ray_colour};
+pub mod hit;
+use crate::hit::{HittableList, Sphere};
+pub mod camera;
+pub mod constants;
+use crate::camera::Camera;
 
-use std::io::{ self, Write };
-use std::thread;
+use rand::{distributions::Uniform, Rng};
+use std::io::{self, Write};
 use std::time;
 
 fn main() -> io::Result<()> {
-
     // Image
     let aspect_ratio = 16.0 / 9.0;
     let image_width: usize = 800;
     let image_height: usize = (image_width as f64 / aspect_ratio) as usize;
+    let samples_per_pix: usize = 100;
 
     // Camera
-    let viewport_height = 2.0;
-    let viewport_width = aspect_ratio * viewport_height;
-    let focal_length = 1.0;
+    // aspect_ratio, viewport height, and focal length
+    let cam = Camera::new(aspect_ratio, 2.0, 1.0);
 
-    let origin = Point3::new(0_f64, 0_f64, 0_f64);
-    let horizontal = Vec3::new(viewport_width, 0_f64, 0_f64);
-    let vertical = Vec3::new(0_f64, viewport_height, 0_f64);
-    let lower_left_corner = origin - horizontal/2_f64 - vertical/2_f64 - Vec3::new(0_f64, 0_f64, focal_length);
-    
-    // loading icon 
-    let loading_icon = ["-", "\\", "|", "/"];
+    // World
+    let mut world = HittableList::new();
+    world.add(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5));
+    world.add(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0));
 
+    // Antialias sampling
+    let unif = Uniform::from(0.0..1.0);
+
+    // Output
     let mut out = io::stdout();
     write!(&mut out, "P3\n{image_width} {image_height}\n255\n")?;
 
     // prints the file from top to bottom
     let mut progress: usize = 0;
-    eprint!("\r{}% Completed", progress);
+    let start = time::Instant::now();
+    eprint!("\x1b[2J");
+    eprint!("\rTracing: {}% Completed", progress);
     for j in (0..image_height).rev() {
-        if (100 - 100*j/(image_height - 1) as usize) > progress {
-            progress = 100 - 100*j/(image_height - 1) as usize;
-            eprint!("\r{}% Completed", progress);
+        if (100 - 100 * j / (image_height - 1) as usize) > progress {
+            progress = 100 - 100 * j / (image_height - 1) as usize;
+            eprint!("\rTracing: {}% Completed", progress);
         }
-            
+
         for i in 0..image_width {
-            let u = i as f64 / (image_width - 1) as f64;
-            let v = j as f64 / (image_height - 1) as f64;
-            let ray = Ray::new(origin, lower_left_corner + u * horizontal + v * vertical - origin);
-            let pixel_colour = sph_ray_colour(&ray);
-            // eprintln!("{:?}", &ray);
-            // thread::sleep(time::Duration::from_secs(1));
+            let samples_u: Vec<f64> = rand::thread_rng()
+                .sample_iter(&unif)
+                .take(samples_per_pix)
+                .collect();
+            let samples_v: Vec<f64> = rand::thread_rng()
+                .sample_iter(&unif)
+                .take(samples_per_pix)
+                .collect();
             
-            Vec3::write_colour(&mut out, pixel_colour)?;
+            let mut pixel_colour = Colour::new_z();
+            for s in 0..samples_per_pix {
+                let u_jitter = samples_u[s];
+                let v_jitter = samples_v[s];
+                // let u_jitter = 0.0;
+                // let v_jitter = 0.0;
+                let u = (u_jitter + i as f64) / (image_width - 1) as f64;
+                let v = (v_jitter + j as f64) / (image_height - 1) as f64;
+                let ray = cam.get_ray(u, v);
+                pixel_colour += ray_colour(&ray, &world);
+            }
+
+
+            Vec3::write_colour(&mut out, pixel_colour, samples_per_pix)?;
         }
     }
 
-    eprint!("\x1b[2K\rDone\n");
+    eprint!("\x1b[2K\rDone in {:#?}\n", start.elapsed());
     Ok(())
 }

@@ -2,6 +2,9 @@ use std::io::{ self, Write };
 use std::default::Default;
 use std::ops::{ Neg, Index, IndexMut, AddAssign, Add, Sub, Mul, MulAssign, SubAssign, Div };
 
+/* Allow for copy because it reduces the number of references in the code
+ *  and makes it nicer to write
+ */
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Vec3 { e0: f64, e1: f64, e2: f64 }
 
@@ -9,14 +12,17 @@ pub type Point3 = Vec3;
 pub type Colour = Vec3;
 
 impl Vec3 {
+    // constructors
     pub fn new(e0: f64, e1: f64, e2: f64) -> Self {
         Self { e0, e1, e2 }
     }
 
+    // zero-constructors
     pub fn new_z() -> Self {
         Self::default()
     }
     
+    // accessors
     pub fn x(&self) -> f64 {
         self.e0
     }
@@ -28,7 +34,7 @@ impl Vec3 {
     pub fn z(&self) -> f64 {
         self.e2
     }
-
+    
     pub fn length_squared(&self) -> f64 {
         self.e0 * self.e0 + self.e1 * self.e1 + self.e2 * self.e2
     }
@@ -36,7 +42,8 @@ impl Vec3 {
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
-
+    
+    // writes a vec3 as a row in ppm format
     pub fn write(out: &mut impl Write, vec: &Vec3) -> io::Result<()> {
         write!(out, "{} {} {}", vec.x(), vec.y(), vec.z())
     }
@@ -44,7 +51,7 @@ impl Vec3 {
     pub fn dot(v: Vec3, w: Vec3) -> f64 {
         v.e0 * w.e0 + v.e1 * w.e1 + v.e2 * w.e2
     }
-
+    
     pub fn cross(v: Vec3, w: Vec3) -> Vec3 {
         Vec3::new(
             v.e1 * w.e2 - w.e1 * v.e2,
@@ -52,15 +59,17 @@ impl Vec3 {
             v.e0 * w.e1 - w.e0 * v.e1,
         )
     }
-
+    
     pub fn unit_vector(v: Vec3) -> Vec3 {
         let length = v.length();
         v / length
     }
-
-    pub fn write_colour(out: &mut impl Write, colour: Colour) -> io::Result<()> {
+    
+    // writes a colour RGB from a vec3
+    pub fn write_colour(out: &mut dyn Write, colour: Colour, samples_per_pix: usize) -> io::Result<()> {
+        let scale = 1.0 / samples_per_pix as f64;
         for i in 0..3 {
-            write!(out, "{}", (255.999 * colour[i]) as i64)?;
+            write!(out, "{}", (255.999 * clamp(colour[i] * scale, 0.0, 0.999)) as u8)?;
             if i < 2 {
                 write!(out, " ")?;
 
@@ -70,6 +79,10 @@ impl Vec3 {
     }
 }
 
+//*************Implement Vector operations using standard ops***************
+
+
+// Unary negation
 impl Neg for Vec3 {    
     type Output = Self;
     fn neg(self) -> Self {
@@ -77,6 +90,8 @@ impl Neg for Vec3 {
     }
 }
 
+
+// Indexed element extration
 impl Index<usize> for Vec3 {
     type Output = f64;
     fn index(&self, i: usize) -> &Self::Output {
@@ -89,6 +104,8 @@ impl Index<usize> for Vec3 {
     }
 }
 
+
+// Index element extration mutable ref
 impl IndexMut<usize> for Vec3 {
     fn index_mut(&mut self, i: usize) -> &mut f64 {
         match i {
@@ -101,9 +118,7 @@ impl IndexMut<usize> for Vec3 {
 }
 
 
-// varous operations and possible overloads
-
-// sub
+// Vec3 - Vec3
 impl Sub<Self> for Vec3 {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
@@ -115,6 +130,8 @@ impl Sub<Self> for Vec3 {
     }
 }
 
+
+// Vec3 - float
 impl Sub<f64> for Vec3 {
     type Output = Vec3;
     fn sub(self, other: f64) -> Vec3 {
@@ -126,6 +143,8 @@ impl Sub<f64> for Vec3 {
     }
 }
 
+
+// Vec3 -= Vec3
 impl SubAssign<Self> for Vec3 {
     fn sub_assign(&mut self, rhs: Self) {
         *self = Self {
@@ -136,6 +155,8 @@ impl SubAssign<Self> for Vec3 {
     }
 }
 
+
+// Vec3 -= float
 impl SubAssign<f64> for Vec3 {
     fn sub_assign(&mut self, rhs: f64) {
         *self = Self {
@@ -147,7 +168,7 @@ impl SubAssign<f64> for Vec3 {
 }
 
 
-// Addition
+// Vec3 + Vec3
 impl Add<Self> for Vec3 {
     type Output = Vec3;
     fn add(self, other: Self) -> Self::Output {
@@ -159,6 +180,8 @@ impl Add<Self> for Vec3 {
     }
 }
 
+
+// Vec3 + float
 impl Add<f64> for Vec3 {
     type Output = Vec3;
     fn add(self, other: f64) -> Self::Output {
@@ -170,6 +193,8 @@ impl Add<f64> for Vec3 {
     }
 }
 
+
+// float + Vec3
 impl Add<Vec3> for f64 {
     type Output = Vec3;
     fn add(self, other: Vec3) -> Vec3 {
@@ -181,6 +206,8 @@ impl Add<Vec3> for f64 {
     }
 }
 
+
+// Vec3 += Vec3
 impl AddAssign<Self> for Vec3 {
     fn add_assign(&mut self, rhs: Self) {
         *self = Self {
@@ -191,6 +218,8 @@ impl AddAssign<Self> for Vec3 {
     }
 }
 
+
+// Vec3 += float
 impl AddAssign<f64> for Vec3 {
     fn add_assign(&mut self, rhs: f64) {
         *self = Self {
@@ -202,7 +231,8 @@ impl AddAssign<f64> for Vec3 {
 }
 
 
-// Multiplication overloading
+// Vec3 * Vec3 Element wise
+//  dot is defined as a method, not a trait
 impl Mul<Self> for Vec3 {
     type Output = Self;
     fn mul(self, other: Self) -> Self {
@@ -214,6 +244,8 @@ impl Mul<Self> for Vec3 {
     }
 }
 
+
+// Vec3 * float
 impl Mul<f64> for Vec3 {
     type Output = Self;
     fn mul(self, other: f64) -> Self {
@@ -225,6 +257,8 @@ impl Mul<f64> for Vec3 {
     }
 }
 
+
+// float * Vec3
 impl Mul<Vec3> for f64 {
     type Output = Vec3;
     fn mul(self, other: Vec3) -> Self::Output {
@@ -236,6 +270,8 @@ impl Mul<Vec3> for f64 {
     }
 }
 
+
+// Vec3 *= Vec3
 impl MulAssign<Self> for Vec3 {
     fn mul_assign(&mut self, rhs: Self) {
         *self = Self {
@@ -246,6 +282,8 @@ impl MulAssign<Self> for Vec3 {
     }
 }
 
+
+// Vec3 *= float
 impl MulAssign<f64> for Vec3 {
     fn mul_assign(&mut self, rhs: f64) {
         *self = Self {
@@ -257,7 +295,7 @@ impl MulAssign<f64> for Vec3 {
 }
 
 
-// div 
+// Vec3 / float
 impl Div<f64> for Vec3 {
     type Output = Vec3;
     fn div(self, other: f64) -> Self::Output {
@@ -269,6 +307,8 @@ impl Div<f64> for Vec3 {
     }
 }
 
+
+// float / Vec3
 impl Div<Vec3> for f64 {
     type Output = Vec3;
     fn div(self, other: Vec3) -> Self::Output {
@@ -280,6 +320,18 @@ impl Div<Vec3> for f64 {
     }
 }
 
+
+fn clamp(x: f64, lo: f64, hi: f64) -> f64 {
+    if x < lo {
+        lo
+    } else if x > hi {
+        hi
+    } else {
+        x
+    }
+}
+
+// testing
 #[cfg(test)]
 mod second_test {
     use super::Vec3;
