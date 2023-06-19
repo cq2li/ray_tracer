@@ -1,10 +1,14 @@
 use std::io::{ self, Write };
 use std::default::Default;
 use std::ops::{ Neg, Index, IndexMut, AddAssign, Add, Sub, Mul, MulAssign, SubAssign, Div };
+use rand::distributions::{ Distribution, Uniform };
+use rand::Rng;
 
 /* Allow for copy because it reduces the number of references in the code
  *  and makes it nicer to write
  */
+
+
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Vec3 { e0: f64, e1: f64, e2: f64 }
 
@@ -21,7 +25,16 @@ impl Vec3 {
     pub fn new_z() -> Self {
         Self::default()
     }
-    
+
+    // random generator
+    pub fn rand(dist: &Uniform<f64>, gen: &mut impl Rng ) -> Self {
+        Self {
+            e0: dist.sample(gen),
+            e1: dist.sample(gen),
+            e2: dist.sample(gen),
+        }
+    }
+
     // accessors
     pub fn x(&self) -> f64 {
         self.e0
@@ -69,13 +82,26 @@ impl Vec3 {
     pub fn write_colour(out: &mut dyn Write, colour: Colour, samples_per_pix: usize) -> io::Result<()> {
         let scale = 1.0 / samples_per_pix as f64;
         for i in 0..3 {
-            write!(out, "{}", (255.999 * clamp(colour[i] * scale, 0.0, 0.999)) as u8)?;
+            write!(out, "{}", (255.999 * clamp((colour[i] * scale).sqrt(), 0.0, 0.999)) as u8)?;
             if i < 2 {
                 write!(out, " ")?;
 
             }
         };
         write!(out, "\n")
+    }
+
+    // checks if it's in a unit sphere
+    pub fn rand_in_unit_sphere(gen: &mut impl Rng) -> Point3 {
+        let dist = Uniform::from(-1.0..1.0);
+        loop {
+            let p = Self::rand(&dist, gen);
+            if p.length_squared() < 1.0 { break p }
+        }
+    }
+
+    pub fn rand_unit_vector(gen: &mut impl Rng) -> Vec3 {
+        return Self::unit_vector(Self::rand_in_unit_sphere(gen))
     }
 }
 

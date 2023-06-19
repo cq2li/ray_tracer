@@ -19,6 +19,10 @@ impl HitRecord {
     pub fn norm(&self) -> Vec3 {
         self.norm
     }
+
+    pub fn point(&self) -> Vec3 {
+        self.point
+    }
 }
 
 impl HitRecord {

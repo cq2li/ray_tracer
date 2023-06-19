@@ -17,7 +17,8 @@ fn main() -> io::Result<()> {
     let aspect_ratio = 16.0 / 9.0;
     let image_width: usize = 800;
     let image_height: usize = (image_width as f64 / aspect_ratio) as usize;
-    let samples_per_pix: usize = 100;
+    let samples_per_pix: usize = 50;
+    let max_depth: usize = 5;
 
     // Camera
     // aspect_ratio, viewport height, and focal length
@@ -25,11 +26,13 @@ fn main() -> io::Result<()> {
 
     // World
     let mut world = HittableList::new();
-    world.add(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5));
+    world.add(Sphere::new(Point3::new(-0.5, 0.0, -1.0), 0.25));
+    world.add(Sphere::new(Point3::new(0.5, 0.0, -1.0), 0.5));
     world.add(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0));
 
     // Antialias sampling
     let unif = Uniform::from(0.0..1.0);
+    let rng = &mut rand::thread_rng();
 
     // Output
     let mut out = io::stdout();
@@ -47,11 +50,11 @@ fn main() -> io::Result<()> {
         }
 
         for i in 0..image_width {
-            let samples_u: Vec<f64> = rand::thread_rng()
+            let samples_u: Vec<f64> = rng
                 .sample_iter(&unif)
                 .take(samples_per_pix)
                 .collect();
-            let samples_v: Vec<f64> = rand::thread_rng()
+            let samples_v: Vec<f64> = rng
                 .sample_iter(&unif)
                 .take(samples_per_pix)
                 .collect();
@@ -65,7 +68,7 @@ fn main() -> io::Result<()> {
                 let u = (u_jitter + i as f64) / (image_width - 1) as f64;
                 let v = (v_jitter + j as f64) / (image_height - 1) as f64;
                 let ray = cam.get_ray(u, v);
-                pixel_colour += ray_colour(&ray, &world);
+                pixel_colour += ray_colour(ray, &world, rng, max_depth);
             }
 
 
