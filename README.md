@@ -36,3 +36,6 @@ Less grainy texture due the the more stable averages of the RGB values.
 ### Add materials and ray scattering behaviour (lambertian and metals).
 Left to right are: metal mirror, matte, semi-matte on metals.
 <img align="center" width="100%" src="./renderings/test_image_9-5.png" style="aspect-ratio: 16/9">
+
+### Add the dielctric class (glass material which can also refract).
+<img align="center" width="100%" src="./renderings/test_image_10-4.png" style="aspect-ratio: 16/9">

@@ -1,7 +1,6 @@
 use crate::constants::inf;
 use crate::hit::{HitRecord, Hittable};
 use crate::vec3::{Colour, Point3, Vec3};
-use rand::Rng;
 
 #[derive(Debug, Default)]
 pub struct Ray {

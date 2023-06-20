@@ -2,13 +2,10 @@ use std::io::{ self, Write };
 use std::default::Default;
 use std::ops::{ Neg, Index, IndexMut, AddAssign, Add, Sub, Mul, MulAssign, SubAssign, Div };
 use rand::distributions::{ Distribution, Uniform };
-use rand::Rng;
 
 /* Allow for copy because it reduces the number of references in the code
  *  and makes it nicer to write
  */
-
-
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Vec3 { e0: f64, e1: f64, e2: f64 }
 
@@ -115,6 +112,13 @@ impl Vec3 {
 
     pub fn reflect(v: Vec3, norm: Vec3) -> Vec3 {
         v - 2.0 * Self::dot(v, norm) * norm
+    }
+
+    pub fn refract(uv: Vec3, n: Vec3, etap_over_eta: f64) -> Vec3 {
+        let cos_theta = Self::dot(-uv, n).min(1.0);
+        let r_out_perp = etap_over_eta * (uv + cos_theta * n);
+        let r_out_parallel = -((1.0 - r_out_perp.length_squared()).abs().sqrt()) * n;
+        r_out_parallel + r_out_perp
     }
 }
 

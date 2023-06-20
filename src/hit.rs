@@ -1,6 +1,7 @@
 use crate::vec3::{ Point3, Vec3, Colour };
 use crate::ray::Ray;
 use std::rc::Rc;
+use rand::Rng;
 
 #[derive(Default, Clone)]
 pub struct HitRecord {
@@ -181,3 +182,38 @@ impl Material for Metal {
 
 }
 
+pub struct Dielectric {
+    ir: f64,
+}
+
+impl Material for Dielectric {
+    fn scatter(&self, ray: Ray, record: &HitRecord, attenuation: &mut Colour, scattered: &mut Ray) -> bool {
+        *attenuation = Colour::new(1.0, 1.0, 1.0);
+        let refraction_ratio = if record.front_face { 1.0/self.ir } else { self.ir };
+        let unit_direction = Vec3::unit_vector(ray.direction());
+        let cos_theta = Vec3::dot(-unit_direction, record.norm()).min(1.0);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+
+        let mut rng = rand::thread_rng();
+        let direction = if refraction_ratio * sin_theta > 1.0 || Self::reflectance(cos_theta, self.ir) > rng.gen_range(0.0..1.0) {
+            // no solution to theta prime, hence no refraction and always reflects
+            Vec3::reflect(unit_direction, record.norm())
+        } else {
+            Vec3::refract(unit_direction, record.norm(), refraction_ratio)
+        };
+        *scattered = Ray::new(record.point(), direction);
+        true
+    }
+}
+
+impl Dielectric {
+    pub fn new(ir: f64) -> Self {
+        Self { ir }
+    }
+
+    pub fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
+        let mut r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
+        r0 = r0 * r0;
+        r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
+    }
+}

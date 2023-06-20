@@ -1,9 +1,9 @@
 pub mod vec3;
 use crate::vec3::{Point3, Vec3, Colour };
 pub mod ray;
-use crate::ray::{ray_colour};
+use crate::ray::ray_colour;
 pub mod hit;
-use crate::hit::{HittableList, Sphere, Lambertian, Metal};
+use crate::hit::{HittableList, Sphere, Lambertian, Metal, Dielectric};
 pub mod camera;
 pub mod constants;
 use crate::camera::Camera;
@@ -17,7 +17,7 @@ fn main() -> io::Result<()> {
     let aspect_ratio = 16.0 / 9.0;
     let image_width: usize = 1200;
     let image_height: usize = (image_width as f64 / aspect_ratio) as usize;
-    let samples_per_pix: usize = 100;
+    let samples_per_pix: usize = 200;
     let max_depth: usize = 50;
 
     // Camera
@@ -27,13 +27,18 @@ fn main() -> io::Result<()> {
     // World
     let material_ground = Rc::new(Lambertian::new(Colour::new(0.95, 0.8, 0.1)));
     let material_center = Rc::new(Lambertian::new(Colour::new(1.0, 0.25, 0.1)));
+    let material_front_center = Rc::new(Metal::new(Colour::new(0.3, 0.8, 1.0), 0.6));
     let material_left   = Rc::new(Metal::new(Colour::new(0.8, 0.8, 0.8), 0.0));
-    let material_right  = Rc::new(Metal::new(Colour::new(0.3, 0.8, 1.0), 0.6));
+    let material_right_small   = Rc::new(Metal::new(Colour::new(0.8, 0.0, 0.1), 0.0));
+    // let material_right  = Rc::new(Metal::new(Colour::new(0.3, 0.8, 1.0), 0.6));
+    let material_right  = Rc::new(Dielectric::new(1.5));
 
     let mut world = HittableList::new();
     world.add(Box::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, material_left.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(1.0, -0.0, -0.8), 0.5, material_right.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.3), 0.5, material_center.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.5, 0.0, -0.9), -0.5, material_right.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -20.0), 15.0, material_center.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.15, -0.25, -0.70), 0.3, material_front_center.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.2, -0.45, -0.65), 0.08, material_right_small.clone())));
     world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_ground.clone())));
 
     // Antialias sampling
