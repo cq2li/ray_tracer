@@ -3,7 +3,7 @@ use crate::hit::{HitRecord, Hittable};
 use crate::vec3::{Colour, Point3, Vec3};
 use rand::Rng;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Ray {
     ori: Point3,
     dir: Vec3,
@@ -30,14 +30,18 @@ impl Ray {
     }
 }
 
-pub fn ray_colour(ray: Ray, world: &impl Hittable, gen: &mut impl Rng, depth: usize) -> Vec3 {
+pub fn ray_colour(ray: Ray, world: &impl Hittable, depth: usize) -> Vec3 {
     if depth == 0 {
         return Colour::new(0.0, 0.0, 0.0)
     }
     let mut rec = HitRecord::default();
+    let mut scattered = Ray::default();
+    let mut attenuation = Colour::default();
     if world.hit(&ray, 0.001, inf, &mut rec) {
-        let target = rec.point() + rec.norm() + Vec3::rand_unit_vector(gen);
-        return 0.5 * ray_colour(Ray::new(rec.point(), target - rec.point()), world, gen, depth - 1)
+        if rec.material.as_ref().map(|x| x.scatter(ray, &rec, &mut attenuation, &mut scattered)).unwrap() {
+            return attenuation * ray_colour(scattered, world, depth - 1)
+        }
+        return Colour::new(0.0, 0.0, 0.0)
     }
     let unit_dir = Vec3::unit_vector(ray.direction());
     // transforms t to between 0 and 1

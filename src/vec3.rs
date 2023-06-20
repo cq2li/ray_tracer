@@ -27,7 +27,8 @@ impl Vec3 {
     }
 
     // random generator
-    pub fn rand(dist: &Uniform<f64>, gen: &mut impl Rng ) -> Self {
+    pub fn rand(dist: &Uniform<f64>) -> Self {
+        let gen = &mut rand::thread_rng();
         Self {
             e0: dist.sample(gen),
             e1: dist.sample(gen),
@@ -92,16 +93,28 @@ impl Vec3 {
     }
 
     // checks if it's in a unit sphere
-    pub fn rand_in_unit_sphere(gen: &mut impl Rng) -> Point3 {
+    pub fn rand_in_unit_sphere() -> Point3 {
         let dist = Uniform::from(-1.0..1.0);
         loop {
-            let p = Self::rand(&dist, gen);
+            let p = Self::rand(&dist);
             if p.length_squared() < 1.0 { break p }
         }
     }
 
-    pub fn rand_unit_vector(gen: &mut impl Rng) -> Vec3 {
-        return Self::unit_vector(Self::rand_in_unit_sphere(gen))
+    pub fn rand_unit_vector() -> Vec3 {
+        return Self::unit_vector(Self::rand_in_unit_sphere())
+    }
+
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        self.x().abs() < s &&
+        self.y().abs() < s &&
+        self.z().abs() < s
+        
+    }
+
+    pub fn reflect(v: Vec3, norm: Vec3) -> Vec3 {
+        v - 2.0 * Self::dot(v, norm) * norm
     }
 }
 

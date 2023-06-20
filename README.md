@@ -31,3 +31,6 @@ The spheres appear grey here due to the lack of self colouring so they take on d
 ### Higher sampling rate.
 Less grainy texture due the the more stable averages of the RGB values.
 <img align="center" width="100%" src="./renderings/test_image_8-29.png" style="aspect-ratio: 16/9">
+
+### Add materials and ray scattering behaviour (lambertian and metals).
+<img align="center" width="100%" src="./renderings/test_image_9-5.png" style="aspect-ratio: 16/9">

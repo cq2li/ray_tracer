@@ -1,5 +1,6 @@
-use crate::vec3::{ Point3, Vec3 };
+use crate::vec3::{ Point3, Vec3, Colour };
 use crate::ray::Ray;
+use std::rc::Rc;
 
 #[derive(Default, Clone)]
 pub struct HitRecord {
@@ -12,10 +13,21 @@ pub struct HitRecord {
     // we will always store the normal that is 'against' the ray
     //  as such we'll need to store if the ray is inside/outside the object when it intersects
     //  if true, array hits came from the outside
-    front_face: bool, 
+    front_face: bool,
+    pub material: Option<Rc<dyn Material>>,
 }
 
 impl HitRecord {
+    pub fn new() -> Self {
+        Self {
+            point: Vec3::new_z(),
+            norm: Vec3::new_z(),
+            t: 0.0,
+            front_face: false,
+            material: None,
+        }
+    }
+
     pub fn norm(&self) -> Vec3 {
         self.norm
     }
@@ -23,9 +35,7 @@ impl HitRecord {
     pub fn point(&self) -> Vec3 {
         self.point
     }
-}
 
-impl HitRecord {
     fn set_face_norm(&mut self, ray: &Ray, outward_norm: Vec3) {
         self.front_face = Vec3::dot(ray.direction(), outward_norm) < 0.0;
         self.norm = if self.front_face {
@@ -37,7 +47,7 @@ impl HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> bool {
+    fn hit(&self, _ray: &Ray, _t_min: f64, _t_max: f64, _hit_record: &mut HitRecord) -> bool {
         false
     }
 }
@@ -45,11 +55,12 @@ pub trait Hittable {
 pub struct Sphere {
     center: Point3,
     radius: f64,
+    material: Rc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64) -> Self {
-        Self {center, radius}
+    pub fn new(center: Point3, radius: f64, material: Rc<dyn Material>) -> Self {
+        Self {center, radius, material}
     }
 }
 
@@ -79,37 +90,38 @@ impl Hittable for Sphere {
         hit_record.point = ray.at(root);
         let outward_norm = (hit_record.point - self.center) / self.radius;
         hit_record.set_face_norm(ray, outward_norm);
+        hit_record.material = Some(self.material.clone());
         true
     }
 }
 
-pub struct HittableList<T: Hittable> {
-    objects: Vec<T>
+pub struct HittableList {
+    objects: Vec<Box<dyn Hittable>>
 }
 
-impl<T: Hittable> HittableList<T> {
+impl HittableList {
     pub fn new() -> Self {
-        Self { objects: Vec::<T>::new()}
+        Self { objects: Vec::<Box<dyn Hittable>>::new()}
     }
 
     pub fn clear(&mut self) {
         self.objects.clear()
     }
-    pub fn add(&mut self, object: T) {
+    pub fn add(&mut self, object: Box<dyn Hittable>) {
         self.objects.push(object)
     }
 
 }
 
-impl<T: Hittable> Hittable for HittableList<T> {
+impl Hittable for HittableList {
 
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> bool {
-        let mut temp_record: HitRecord = HitRecord::default();
+        let mut temp_record = HitRecord::default();
         let mut hit_any = false;
         let mut closest_so_far = t_max;
 
         for obj in self.objects.iter() {
-            if obj.hit(ray, t_min, closest_so_far, &mut temp_record) {
+            if (*obj).hit(ray, t_min, closest_so_far, &mut temp_record) {
                 hit_any = true;
                 closest_so_far = temp_record.t;
                 *hit_record = temp_record.clone()
@@ -118,3 +130,54 @@ impl<T: Hittable> Hittable for HittableList<T> {
         hit_any
     }
 }
+
+pub trait Material {
+    fn scatter(&self, _ray: Ray, _record: &HitRecord, _attenuation: &mut Colour, _scattered: &mut Ray) -> bool {
+        false
+    }
+}
+
+pub struct Lambertian {
+    albedo: Colour,
+}
+
+impl Lambertian {
+    pub fn new(albedo: Colour) -> Self {
+        Self {albedo}
+    }
+}
+
+impl Material for Lambertian {
+    fn scatter(&self, _: Ray, record: &HitRecord, attenuation: &mut Colour, scattered: &mut Ray) -> bool {
+        let mut scatter_direction = record.norm() + Vec3::rand_unit_vector();
+        if scatter_direction.near_zero() {
+            scatter_direction = record.norm();
+        }
+        *scattered = Ray::new(record.point(), scatter_direction);
+        *attenuation = self.albedo;
+        Vec3::dot(scattered.direction(), record.norm()) > 0.0
+    }
+
+}
+
+pub struct Metal {
+    albedo: Colour,
+    fuzz: f64,
+}
+
+impl Metal {
+    pub fn new(albedo: Colour, fuzz: f64) -> Self {
+        Self {albedo, fuzz: if fuzz > 1.0 {1.0} else {fuzz}}
+    }
+}
+
+impl Material for Metal {
+    fn scatter(&self, ray: Ray, record: &HitRecord, attenuation: &mut Colour, scattered: &mut Ray) -> bool {
+        let reflected = Vec3::reflect(ray.direction(), record.norm());
+        *scattered = Ray::new(record.point(), reflected + self.fuzz * Vec3::rand_in_unit_sphere());
+        *attenuation = self.albedo;
+        true
+    }
+
+}
+
