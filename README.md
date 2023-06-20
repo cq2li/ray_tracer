@@ -1,5 +1,5 @@
 # Ray Tracer
-A small ray tracer implemented in rust for the purpose of learning Rust using [Ray Tracing In One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html).
+A small ray tracer implemented in rust for the purpose of learning Rust (and ray tracing!) using [Ray Tracing In One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html).
 
 ## The Journey
 ### Testing out the PPM output in Rust.
