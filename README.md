@@ -18,7 +18,7 @@ A small ray tracer implemented in rust for the purpose of learning Rust using [R
 ### Building a word with a list of objects.
 <img width="100%" src="./renderings/test_image_7-5.png" style="aspect-ratio: 16/9">
 
-### Initial rendering of diffuse material using 1 ray bounce, very prominent shadow acne.
+### Initial rendering of diffuse material using 2 ray bounce, very prominent shadow acne.
 Diffuse material scatters light in random directions, giving the object a matte look. Should the ray bounce and hit nothing, the pixel takes on the background colour at half intensity.
 Because of float point imprecision, sometimes the intersection is calculated to be inside of the spheres, which immediately returns a black pixel. This is somwhat remedied by biasing the minimum collision distance to be a very small positive float instead of 0.0.
 
