@@ -34,4 +34,5 @@ Less grainy texture due the the more stable averages of the RGB values.
 <img align="center" width="100%" src="./renderings/test_image_8-29.png" style="aspect-ratio: 16/9">
 
 ### Add materials and ray scattering behaviour (lambertian and metals).
+Left to right are: Metal mirror, matte, semi-matte on metals.
 <img align="center" width="100%" src="./renderings/test_image_9-5.png" style="aspect-ratio: 16/9">
