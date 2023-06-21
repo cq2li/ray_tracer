@@ -18,11 +18,12 @@ fn main() -> io::Result<()> {
     let image_width: usize = 1200;
     let image_height: usize = (image_width as f64 / aspect_ratio) as usize;
     let samples_per_pix: usize = 200;
-    let max_depth: usize = 50;
+    let max_depth: usize = 100;
 
     // Camera
     // aspect_ratio, viewport height, and focal length
-    let cam = Camera::new(aspect_ratio, 2.0, 1.0);
+    let cam = Camera::new(Point3::new(-0.1,-0.4,0.7), Point3::new(-0.65,0.0,-2.0), Vec3::new(0.0,1.0,0.0), 60.0, aspect_ratio);
+    // let cam = Camera::new(aspect_ratio, 2.0, 1.0);
 
     // World
     let material_ground = Rc::new(Lambertian::new(Colour::new(0.95, 0.8, 0.1)));
@@ -30,15 +31,19 @@ fn main() -> io::Result<()> {
     let material_front_center = Rc::new(Metal::new(Colour::new(0.3, 0.8, 1.0), 0.6));
     let material_left   = Rc::new(Metal::new(Colour::new(0.8, 0.8, 0.8), 0.0));
     let material_right_small   = Rc::new(Metal::new(Colour::new(0.8, 0.0, 0.1), 0.0));
+    let material_right_small_s   = Rc::new(Metal::new(Colour::new(0.1, 0.1, 0.1), 0.0));
     // let material_right  = Rc::new(Metal::new(Colour::new(0.3, 0.8, 1.0), 0.6));
     let material_right  = Rc::new(Dielectric::new(1.5));
+    let material_left_small  = Rc::new(Dielectric::new(1.5));
 
     let mut world = HittableList::new();
     world.add(Box::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, material_left.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(0.5, 0.0, -0.9), -0.5, material_right.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -20.0), 15.0, material_center.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(-0.15, -0.25, -0.70), 0.3, material_front_center.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(0.2, -0.45, -0.65), 0.08, material_right_small.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.3, 0.18, -0.2), -0.17, material_right.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -20.0), 12.0, material_center.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.15, -0.2, -0.70), 0.3, material_front_center.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.35, -0.468, 0.45), 0.04, material_right_small.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.58, -0.35, -0.55), 0.15, material_right_small_s.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.35, -0.45, -0.5), 0.18, material_left_small.clone())));
     world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_ground.clone())));
 
     // Antialias sampling

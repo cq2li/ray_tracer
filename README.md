@@ -39,3 +39,6 @@ Left to right are: metal mirror, matte, semi-matte on metals.
 
 ### Add the dielctric class (glass material which can also refract).
 <img align="center" width="100%" src="./renderings/test_image_10-4.png" style="aspect-ratio: 16/9">
+
+### Add camera repositioning.
+<img align="center" width="100%" src="./renderings/test_image_11-2.png" style="aspect-ratio: 16/9">

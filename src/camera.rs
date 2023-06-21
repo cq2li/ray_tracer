@@ -1,11 +1,11 @@
 use crate::vec3::{ Point3, Vec3 };
 use crate::ray::Ray;
+use crate::constants::DegToRad;
 
 pub struct Camera {
     pub aspect_ratio: f64,
     pub viewport_height: f64,
     pub viewport_width: f64,
-    pub focal_length: f64,
     pub origin: Point3,
     pub horizontal: Vec3,
     pub vertical: Vec3,
@@ -13,17 +13,24 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, viewport_height: f64, focal_length: f64) -> Self {
+    pub fn new(lookfrom: Point3, lookat: Point3, vup: Vec3, vfov: f64, aspect_ratio: f64) -> Self {
+        let theta = vfov.deg_to_rad();
+        let h = (theta/2.0).tan();
+        let viewport_height = 2.0 * h;
         let viewport_width = aspect_ratio * viewport_height;
-        let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-        let vertical = Vec3::new(0.0, viewport_height, 0.0);
-        let origin = Point3::new_z();
-        let lower_left_corner = origin - horizontal/2.0 - vertical/2.0 - Vec3::new(0.0, 0.0, focal_length);
+
+        let w = Vec3::unit_vector(lookfrom - lookat);
+        let u = Vec3::unit_vector(Vec3::cross(vup, w));
+        let v = Vec3::cross(w, u);
+
+        let origin = lookfrom;
+        let horizontal = viewport_width * u;
+        let vertical = viewport_height * v;
+        let lower_left_corner = origin - horizontal/2.0 - vertical/2.0 - w;
         Self {
             aspect_ratio,
             viewport_height,
             viewport_width,
-            focal_length,
             origin,
             horizontal,
             vertical,
