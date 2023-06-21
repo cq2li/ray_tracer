@@ -17,12 +17,19 @@ fn main() -> io::Result<()> {
     let aspect_ratio = 16.0 / 9.0;
     let image_width: usize = 1200;
     let image_height: usize = (image_width as f64 / aspect_ratio) as usize;
-    let samples_per_pix: usize = 200;
-    let max_depth: usize = 100;
+    let samples_per_pix: usize = 300;
+    let max_depth: usize = 150;
 
     // Camera
     // aspect_ratio, viewport height, and focal length
-    let cam = Camera::new(Point3::new(-0.1,-0.4,0.7), Point3::new(-0.65,0.0,-2.0), Vec3::new(0.0,1.0,0.0), 60.0, aspect_ratio);
+    let lookfrom = Point3::new(-0.3, -0.5, 0.6);
+    let lookat = Point3::new(-0.35, -0.468, 0.45);
+    let vup = Vec3::new(0.0, 1.0, 0.0); // camera vertical orientation not necessarily aligned with
+                                        // the actual lens plan, points straight up
+    let vfov = 90.0; // in degrees vertical field of view
+    let focus_dist = (lookfrom-lookat).length();
+    let aperture = 0.005;
+    let cam = Camera::new(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, focus_dist);
     // let cam = Camera::new(aspect_ratio, 2.0, 1.0);
 
     // World
@@ -41,7 +48,7 @@ fn main() -> io::Result<()> {
     world.add(Box::new(Sphere::new(Point3::new(-0.3, 0.18, -0.2), -0.17, material_right.clone())));
     world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -20.0), 12.0, material_center.clone())));
     world.add(Box::new(Sphere::new(Point3::new(-0.15, -0.2, -0.70), 0.3, material_front_center.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(-0.35, -0.468, 0.45), 0.04, material_right_small.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.4, -0.39, 0.45), 0.04, material_right_small.clone())));
     world.add(Box::new(Sphere::new(Point3::new(-0.58, -0.35, -0.55), 0.15, material_right_small_s.clone())));
     world.add(Box::new(Sphere::new(Point3::new(-0.35, -0.38, -0.4), 0.12, material_left_small.clone())));
     world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_ground.clone())));

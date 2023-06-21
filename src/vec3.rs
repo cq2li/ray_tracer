@@ -101,6 +101,15 @@ impl Vec3 {
     pub fn rand_unit_vector() -> Vec3 {
         return Self::unit_vector(Self::rand_in_unit_sphere())
     }
+    
+    pub fn rand_in_unit_disk() -> Vec3 {
+        let dist = Uniform::from(-1.0..1.0);
+        let mut rng = rand::thread_rng();
+        loop {
+            let p = Vec3::new(dist.sample(&mut rng), dist.sample(&mut rng), 0.0);
+            if p.length() < 1.0 { break p }
+        }
+    }
 
     pub fn near_zero(&self) -> bool {
         let s = 1e-8;

@@ -42,3 +42,7 @@ Left to right are: metal mirror, matte, semi-matte on metals.
 
 ### Add camera repositioning.
 <img align="center" width="100%" src="./renderings/test_image_11-2.png" style="aspect-ratio: 16/9">
+
+### Add depth of field.
+<img align="center" width="100%" src="./renderings/test_image_12-2.png" style="aspect-ratio: 16/9">
+
