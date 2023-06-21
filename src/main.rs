@@ -43,7 +43,7 @@ fn main() -> io::Result<()> {
     world.add(Box::new(Sphere::new(Point3::new(-0.15, -0.2, -0.70), 0.3, material_front_center.clone())));
     world.add(Box::new(Sphere::new(Point3::new(-0.35, -0.468, 0.45), 0.04, material_right_small.clone())));
     world.add(Box::new(Sphere::new(Point3::new(-0.58, -0.35, -0.55), 0.15, material_right_small_s.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(-0.35, -0.45, -0.5), 0.18, material_left_small.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.35, -0.38, -0.4), 0.12, material_left_small.clone())));
     world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_ground.clone())));
 
     // Antialias sampling
