@@ -2,6 +2,8 @@ use crate::vec3::{ Point3, Vec3, Colour };
 use crate::ray::Ray;
 use std::rc::Rc;
 use rand::Rng;
+use rand::distributions::Uniform;
+use rand::prelude::Distribution;
 
 #[derive(Default, Clone)]
 pub struct HitRecord {
@@ -216,4 +218,54 @@ impl Dielectric {
         r0 = r0 * r0;
         r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
     }
+}
+
+pub fn random_scene() -> HittableList {
+    let mut world = HittableList::new();
+
+    let ground_material = Rc::new(Lambertian::new(Colour::new(0.5, 0.5, 0.5)));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_material.clone())));
+    let mut rng = rand::thread_rng();
+    let dist_diffuse = Uniform::from(0.0..1.0);
+    let dist_metal = Uniform::from(0.5..1.0);
+    let dist_fuzz = Uniform::from(0.0..0.5);
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = dist_diffuse.sample(&mut rng); // using diffuse dist since its 0 1
+            let center = Point3::new(a as f64 + 0.9 * dist_diffuse.sample(&mut rng), 0.2, b as f64 + 0.9 * dist_diffuse.sample(&mut rng));
+
+            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                let sphere_material: Rc<dyn Material>;
+
+                if choose_mat < 0.8 {
+                    // diffuse
+                    let albedo = Colour::rand(&dist_diffuse) * Colour::rand(&dist_diffuse);
+                    sphere_material = Rc::new(Lambertian::new(albedo));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material.clone())));
+                } else if choose_mat < 0.95 {
+                    // metal
+                    let albedo = Colour::rand(&dist_metal);
+                    let fuzz = dist_fuzz.sample(&mut rng);
+                    sphere_material = Rc::new(Metal::new(albedo, fuzz));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material.clone())));
+                } else {
+                    // glass
+                    sphere_material = Rc::new(Dielectric::new(1.5));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material.clone())));
+                }
+            }
+        }
+    }
+
+    let material1 = Rc::new(Dielectric::new(1.5));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, material1.clone())));
+
+    let material2 = Rc::new(Lambertian::new(Colour::new(0.4, 0.2, 0.1)));
+    world.add(Box::new(Sphere::new(Point3::new(-4.0, 1.0, 0.0), 1.0, material2.clone())));
+
+    let material3 = Rc::new(Metal::new(Colour::new(0.7, 0.6, 0.5), 0.0));
+    world.add(Box::new(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, material3.clone())));
+
+    world
 }

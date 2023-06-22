@@ -46,3 +46,8 @@ Left to right are: metal mirror, matte, semi-matte on metals.
 ### Add depth of field.
 <img align="center" width="100%" src="./renderings/test_image_12-2.png" style="aspect-ratio: 16/9">
 
+### Randomly generated globes.
+The big globe ate the smaller one 😩.
+<img align="center" width="100%" src="./renderings/test_image_13.png" style="aspect-ratio: 16/9">
+
+
