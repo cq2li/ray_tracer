@@ -50,7 +50,10 @@ Left to right are: metal mirror, matte, semi-matte on metals.
 The big globe ate the smaller one 😩.
 <img align="center" width="100%" src="./renderings/test_image_13.png" style="aspect-ratio: 16/9">
 
-
 ### Parallel Processed.
 Fun with rayon/arc/send/sync 😑.
 <img align="center" width="100%" src="./renderings/test_image_13_par.png" style="aspect-ratio: 16/9">
+
+### Getting rid of collisions in world generation.
+<img align="center" width="100%" src="./renderings/test_image_13_no_collision.png" style="aspect-ratio: 16/9">
+

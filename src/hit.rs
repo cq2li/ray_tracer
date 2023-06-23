@@ -98,22 +98,43 @@ impl Hittable for Sphere {
     }
 }
 
+pub trait Intersects {
+    fn center(&self) -> Point3;
+
+    fn radius(&self) -> f64;
+}
+
+impl Intersects for Sphere {
+    fn center(&self) -> Point3 {
+        self.center
+    }
+
+    fn radius(&self) -> f64 {
+        self.radius
+    }
+}
+
+impl Collide for Sphere {
+
+}
+
+pub trait Collide: Hittable + Intersects {}
+
 pub struct HittableList {
-    objects: Vec<Arc<dyn Hittable + Sync + Send>>
+    objects: Vec<Arc<dyn Collide + Sync + Send>>
 }
 
 impl HittableList {
     pub fn new() -> Self {
-        Self { objects: Vec::<Arc<dyn Hittable + Sync + Send>>::new()}
+        Self { objects: Vec::<Arc<dyn Collide + Sync + Send>>::new()}
     }
 
     pub fn clear(&mut self) {
         self.objects.clear()
     }
-    pub fn add(&mut self, object: Arc<dyn Hittable + Sync + Send>) {
+    pub fn add(&mut self, object: Arc<dyn Collide + Sync + Send>) {
         self.objects.push(object)
     }
-
 }
 
 impl Hittable for HittableList {
@@ -227,36 +248,8 @@ pub fn random_scene() -> HittableList {
     world.add(Arc::new(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_material.clone())));
     let mut rng = rand::thread_rng();
     let dist_diffuse = Uniform::from(0.0..1.0);
-    let dist_metal = Uniform::from(0.5..1.0);
+    let dist_metal = Uniform::from(0.7..1.0);
     let dist_fuzz = Uniform::from(0.0..0.5);
-
-    for a in -11..11 {
-        for b in -11..11 {
-            let choose_mat = dist_diffuse.sample(&mut rng); // using diffuse dist since its 0 1
-            let center = Point3::new(a as f64 + 0.9 * dist_diffuse.sample(&mut rng), 0.2, b as f64 + 0.9 * dist_diffuse.sample(&mut rng));
-
-            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                let sphere_material: Arc<dyn Material + Sync + Send>;
-
-                if choose_mat < 0.8 {
-                    // diffuse
-                    let albedo = Colour::rand(&dist_diffuse) * Colour::rand(&dist_diffuse);
-                    sphere_material = Arc::new(Lambertian::new(albedo));
-                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material.clone())));
-                } else if choose_mat < 0.95 {
-                    // metal
-                    let albedo = Colour::rand(&dist_metal);
-                    let fuzz = dist_fuzz.sample(&mut rng);
-                    sphere_material = Arc::new(Metal::new(albedo, fuzz));
-                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material.clone())));
-                } else {
-                    // glass
-                    sphere_material = Arc::new(Dielectric::new(1.5));
-                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material.clone())));
-                }
-            }
-        }
-    }
 
     let material1 = Arc::new(Dielectric::new(1.5));
     world.add(Arc::new(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, material1.clone())));
@@ -267,5 +260,48 @@ pub fn random_scene() -> HittableList {
     let material3 = Arc::new(Metal::new(Colour::new(0.7, 0.6, 0.5), 0.0));
     world.add(Arc::new(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, material3.clone())));
 
+    for a in -11..11 {
+        for b in -11..11 {
+            // using diffuse dist since its 0 1
+            let choose_mat = dist_diffuse.sample(&mut rng);
+            let center = loop {
+                let tmp = Point3::new(a as f64 + 0.9 * dist_diffuse.sample(&mut rng), 0.2, b as f64 + 0.9 * dist_diffuse.sample(&mut rng));
+                let not_intersecting = world.objects
+                    .iter()
+                    .fold(true, |not_intersecting, sphere| {
+                        not_intersecting && (sphere.center() - tmp).length() > sphere.radius() + 0.2
+                    });
+                if not_intersecting {
+                    break tmp
+                }
+            };
+
+            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                let sphere_material: Arc<dyn Material + Sync + Send>;
+    
+                if choose_mat < 0.6 {
+                    // diffuse
+                    let albedo = Colour::rand(&dist_diffuse) * Colour::rand(&dist_diffuse);
+                    sphere_material = Arc::new(Lambertian::new(albedo));
+                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material.clone())));
+                } else if choose_mat < 0.8 {
+                    // metal
+                    let albedo = Colour::rand(&dist_metal);
+                    let fuzz = dist_fuzz.sample(&mut rng);
+                    sphere_material = Arc::new(Metal::new(albedo, fuzz));
+                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material.clone())));
+                } else {
+                    // glass
+                    let hollow = if dist_diffuse.sample(&mut rng) < 0.5 {
+                        -1.0
+                    } else {
+                        1.0
+                    };
+                    sphere_material = Arc::new(Dielectric::new(1.5));
+                    world.add(Arc::new(Sphere::new(center, 0.2 * hollow, sphere_material.clone())));
+                }
+            }
+        }
+    }
     world
 }

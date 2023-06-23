@@ -1,13 +1,17 @@
-use std::io::{ self, Write };
+use rand::distributions::{Distribution, Uniform};
 use std::default::Default;
-use std::ops::{ Neg, Index, IndexMut, AddAssign, Add, Sub, Mul, MulAssign, SubAssign, Div };
-use rand::distributions::{ Distribution, Uniform };
+use std::io::{self, Write};
+use std::ops::{Add, AddAssign, Div, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 
 /* Allow for copy because it reduces the number of references in the code
  *  and makes it nicer to write
  */
 #[derive(Debug, Default, Clone, Copy)]
-pub struct Vec3 { e0: f64, e1: f64, e2: f64 }
+pub struct Vec3 {
+    e0: f64,
+    e1: f64,
+    e2: f64,
+}
 
 pub type Point3 = Vec3;
 pub type Colour = Vec3;
@@ -18,7 +22,7 @@ impl Vec3 {
         Self { e0, e1, e2 }
     }
 
-    // zero-constructors
+    // zero-init
     pub fn new_z() -> Self {
         Self::default()
     }
@@ -41,11 +45,11 @@ impl Vec3 {
     pub fn y(&self) -> f64 {
         self.e1
     }
-    
+
     pub fn z(&self) -> f64 {
         self.e2
     }
-    
+
     pub fn length_squared(&self) -> f64 {
         self.e0 * self.e0 + self.e1 * self.e1 + self.e2 * self.e2
     }
@@ -53,7 +57,7 @@ impl Vec3 {
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
-    
+
     // writes a vec3 as a row in ppm format
     pub fn write(out: &mut impl Write, vec: &Vec3) -> io::Result<()> {
         write!(out, "{} {} {}", vec.x(), vec.y(), vec.z())
@@ -62,7 +66,7 @@ impl Vec3 {
     pub fn dot(v: Vec3, w: Vec3) -> f64 {
         v.e0 * w.e0 + v.e1 * w.e1 + v.e2 * w.e2
     }
-    
+
     pub fn cross(v: Vec3, w: Vec3) -> Vec3 {
         Vec3::new(
             v.e1 * w.e2 - w.e1 * v.e2,
@@ -70,22 +74,29 @@ impl Vec3 {
             v.e0 * w.e1 - w.e0 * v.e1,
         )
     }
-    
+
     pub fn unit_vector(v: Vec3) -> Vec3 {
         let length = v.length();
         v / length
     }
-    
+
     // writes a colour RGB from a vec3
-    pub fn write_colour(out: &mut dyn Write, colour: Colour, samples_per_pix: usize) -> io::Result<()> {
+    pub fn write_colour(
+        out: &mut dyn Write,
+        colour: Colour,
+        samples_per_pix: usize,
+    ) -> io::Result<()> {
         let scale = 1.0 / samples_per_pix as f64;
         for i in 0..3 {
-            write!(out, "{}", (255.999 * clamp((colour[i] * scale).sqrt(), 0.0, 0.999)) as u8)?;
+            write!(
+                out,
+                "{}",
+                (255.999 * clamp((colour[i] * scale).sqrt(), 0.0, 0.999)) as u8
+            )?;
             if i < 2 {
                 write!(out, " ")?;
-
             }
-        };
+        }
         write!(out, "\n")
     }
 
@@ -93,11 +104,17 @@ impl Vec3 {
         let scale = 1.0 / samples_per_pix as f64;
         let mut colour_string = String::new();
         for i in 0..3 {
-            colour_string.push_str(format!("{}", (255.999 * clamp((colour[i] * scale).sqrt(), 0.0, 0.999)) as u8).as_str());
+            colour_string.push_str(
+                format!(
+                    "{}",
+                    (255.999 * clamp((colour[i] * scale).sqrt(), 0.0, 0.999)) as u8
+                )
+                .as_str(),
+            );
             if i < 2 {
                 colour_string.push_str(" ");
             }
-        };
+        }
         colour_string.into_boxed_str()
     }
 
@@ -106,29 +123,32 @@ impl Vec3 {
         let dist = Uniform::from(-1.0..1.0);
         loop {
             let p = Self::rand(&dist);
-            if p.length_squared() < 1.0 { break p }
+            if p.length_squared() < 1.0 {
+                break p;
+            }
         }
     }
 
     pub fn rand_unit_vector() -> Vec3 {
-        return Self::unit_vector(Self::rand_in_unit_sphere())
+        return Self::unit_vector(Self::rand_in_unit_sphere());
     }
-    
+
     pub fn rand_in_unit_disk() -> Vec3 {
         let dist = Uniform::from(-1.0..1.0);
         let mut rng = rand::thread_rng();
         loop {
             let p = Vec3::new(dist.sample(&mut rng), dist.sample(&mut rng), 0.0);
-            if p.length() < 1.0 { break p }
+            if p.length() < 1.0 {
+                break p;
+            }
         }
     }
-
+    
+    /* @brief A tolerance checking function for float points
+     */
     pub fn near_zero(&self) -> bool {
         let s = 1e-8;
-        self.x().abs() < s &&
-        self.y().abs() < s &&
-        self.z().abs() < s
-        
+        self.x().abs() < s && self.y().abs() < s && self.z().abs() < s
     }
 
     pub fn reflect(v: Vec3, norm: Vec3) -> Vec3 {
@@ -145,15 +165,17 @@ impl Vec3 {
 
 //*************Implement Vector operations using standard ops***************
 
-
 // Unary negation
-impl Neg for Vec3 {    
+impl Neg for Vec3 {
     type Output = Self;
     fn neg(self) -> Self {
-        Self { e0: -self.e0, e1: self.e1.neg(), e2: self.e2.neg() }
+        Self {
+            e0: -self.e0,
+            e1: self.e1.neg(),
+            e2: self.e2.neg(),
+        }
     }
 }
-
 
 // Indexed element extration
 impl Index<usize> for Vec3 {
@@ -168,7 +190,6 @@ impl Index<usize> for Vec3 {
     }
 }
 
-
 // Index element extration mutable ref
 impl IndexMut<usize> for Vec3 {
     fn index_mut(&mut self, i: usize) -> &mut f64 {
@@ -180,7 +201,6 @@ impl IndexMut<usize> for Vec3 {
         }
     }
 }
-
 
 // Vec3 - Vec3
 impl Sub<Self> for Vec3 {
@@ -194,7 +214,6 @@ impl Sub<Self> for Vec3 {
     }
 }
 
-
 // Vec3 - float
 impl Sub<f64> for Vec3 {
     type Output = Vec3;
@@ -207,7 +226,6 @@ impl Sub<f64> for Vec3 {
     }
 }
 
-
 // Vec3 -= Vec3
 impl SubAssign<Self> for Vec3 {
     fn sub_assign(&mut self, rhs: Self) {
@@ -219,7 +237,6 @@ impl SubAssign<Self> for Vec3 {
     }
 }
 
-
 // Vec3 -= float
 impl SubAssign<f64> for Vec3 {
     fn sub_assign(&mut self, rhs: f64) {
@@ -230,7 +247,6 @@ impl SubAssign<f64> for Vec3 {
         };
     }
 }
-
 
 // Vec3 + Vec3
 impl Add<Self> for Vec3 {
@@ -244,7 +260,6 @@ impl Add<Self> for Vec3 {
     }
 }
 
-
 // Vec3 + float
 impl Add<f64> for Vec3 {
     type Output = Vec3;
@@ -257,19 +272,13 @@ impl Add<f64> for Vec3 {
     }
 }
 
-
 // float + Vec3
 impl Add<Vec3> for f64 {
     type Output = Vec3;
     fn add(self, other: Vec3) -> Vec3 {
-        Vec3::new(
-            self + other.e0,
-            self + other.e1,
-            self + other.e2
-            )
+        Vec3::new(self + other.e0, self + other.e1, self + other.e2)
     }
 }
-
 
 // Vec3 += Vec3
 impl AddAssign<Self> for Vec3 {
@@ -282,7 +291,6 @@ impl AddAssign<Self> for Vec3 {
     }
 }
 
-
 // Vec3 += float
 impl AddAssign<f64> for Vec3 {
     fn add_assign(&mut self, rhs: f64) {
@@ -293,7 +301,6 @@ impl AddAssign<f64> for Vec3 {
         };
     }
 }
-
 
 // Vec3 * Vec3 Element wise
 //  dot is defined as a method, not a trait
@@ -308,7 +315,6 @@ impl Mul<Self> for Vec3 {
     }
 }
 
-
 // Vec3 * float
 impl Mul<f64> for Vec3 {
     type Output = Self;
@@ -321,19 +327,13 @@ impl Mul<f64> for Vec3 {
     }
 }
 
-
 // float * Vec3
 impl Mul<Vec3> for f64 {
     type Output = Vec3;
     fn mul(self, other: Vec3) -> Self::Output {
-        Vec3::new(
-            self * other.e0,
-            self * other.e1,
-            self * other.e2
-            )
+        Vec3::new(self * other.e0, self * other.e1, self * other.e2)
     }
 }
-
 
 // Vec3 *= Vec3
 impl MulAssign<Self> for Vec3 {
@@ -346,7 +346,6 @@ impl MulAssign<Self> for Vec3 {
     }
 }
 
-
 // Vec3 *= float
 impl MulAssign<f64> for Vec3 {
     fn mul_assign(&mut self, rhs: f64) {
@@ -358,19 +357,17 @@ impl MulAssign<f64> for Vec3 {
     }
 }
 
-
 // Vec3 / float
 impl Div<f64> for Vec3 {
     type Output = Vec3;
     fn div(self, other: f64) -> Self::Output {
         Self::Output {
-            e0: self.e0 * 1_f64/other,
-            e1: self.e1 * 1_f64/other,
-            e2: self.e2 * 1_f64/other,
+            e0: self.e0 * 1_f64 / other,
+            e1: self.e1 * 1_f64 / other,
+            e2: self.e2 * 1_f64 / other,
         }
     }
 }
-
 
 // float / Vec3
 impl Div<Vec3> for f64 {
@@ -384,7 +381,8 @@ impl Div<Vec3> for f64 {
     }
 }
 
-
+/* @brief imposes a min and max on a float64
+ */
 fn clamp(x: f64, lo: f64, hi: f64) -> f64 {
     if x < lo {
         lo
@@ -402,8 +400,8 @@ mod second_test {
     #[test]
     fn basics() {
         // constructor
-        let mut v1 = Vec3::new(1f64,2f64,3f64);
-        let v2 = Vec3::new(5f64,4f64,3f64);
+        let mut v1 = Vec3::new(1f64, 2f64, 3f64);
+        let v2 = Vec3::new(5f64, 4f64, 3f64);
         // x, y, z
         assert_eq!(v1.x(), 1f64);
         assert_eq!(v1.y(), 2f64);
@@ -423,7 +421,7 @@ mod second_test {
         *e1 = 16f64;
         assert_eq!(v1.y(), 16f64);
         // length
-        let mut v3 = Vec3::new(3f64,3f64,3f64);
+        let mut v3 = Vec3::new(3f64, 3f64, 3f64);
         assert_eq!(v3.length(), 27f64.sqrt());
         v3 *= 3f64;
         assert_eq!(v3.x(), 9f64);
@@ -434,7 +432,5 @@ mod second_test {
 
         let v5 = v2 + v3;
         assert_eq!(v5.x(), 14f64);
-        
     }
 }
-
