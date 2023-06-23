@@ -19,7 +19,7 @@ use indicatif::{ ParallelProgressIterator, style::ProgressStyle};
 fn main() -> io::Result<()> {
     // Image
     let aspect_ratio = 3.0 / 2.0;
-    let image_width: usize = 1200;
+    let image_width: usize = 400;
     let image_height: usize = (image_width as f64 / aspect_ratio) as usize;
     let samples_per_pix: usize = 200;
     let max_depth: usize = 50;
