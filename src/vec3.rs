@@ -89,6 +89,18 @@ impl Vec3 {
         write!(out, "\n")
     }
 
+    pub fn colour_to_str(colour: Colour, samples_per_pix: usize) -> Box<str> {
+        let scale = 1.0 / samples_per_pix as f64;
+        let mut colour_string = String::new();
+        for i in 0..3 {
+            colour_string.push_str(format!("{}", (255.999 * clamp((colour[i] * scale).sqrt(), 0.0, 0.999)) as u8).as_str());
+            if i < 2 {
+                colour_string.push_str(" ");
+            }
+        };
+        colour_string.into_boxed_str()
+    }
+
     // checks if it's in a unit sphere
     pub fn rand_in_unit_sphere() -> Point3 {
         let dist = Uniform::from(-1.0..1.0);
