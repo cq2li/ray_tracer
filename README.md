@@ -51,3 +51,6 @@ The big globe ate the smaller one 😩.
 <img align="center" width="100%" src="./renderings/test_image_13.png" style="aspect-ratio: 16/9">
 
 
+### Parallel Processed.
+Fun with rayon/arc/send/sync 😑.
+<img align="center" width="100%" src="./renderings/test_image_13_par.png" style="aspect-ratio: 16/9">
